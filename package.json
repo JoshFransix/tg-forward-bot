@@ -1,0 +1,18 @@
+{
+  "name": "tg-relay",
+  "version": "1.0.0",
+  "description": "Relays messages from a source Telegram group to a target group",
+  "main": "relay.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^18.0.8",
+    "input": "^1.0.1",
+    "telegram": "^2.26.22"
+  }
+}
