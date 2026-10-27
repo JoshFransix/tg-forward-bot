@@ -1,5 +1,5 @@
 require("dotenv").config();
-const { TelegramClient, Api } = require("telegram");
+const { TelegramClient } = require("telegram");
 const { StringSession } = require("telegram/sessions");
 const input = require("input");
 const fs = require("fs");
@@ -55,17 +55,20 @@ let queue = Promise.resolve();
     const chatId = BigInt(message.chatId.toString());
     if (chatId !== SOURCE && chatId !== -SOURCE - 1000000000000n) return;
 
-    // Source has content protection on, so copy the text instead of forwarding.
-    // Media can't be copied from a protected chat; only its caption is reposted.
+    // My source channel has "Restrict saving content" enabled, so forwarding is
+    // blocked; posts are sent as new messages instead. Media can't be re-sent
+    // from a protected chat, so only its caption is reposted.
     const text = message.message;
     if (!text) {
       console.log(`Skipped message ${message.id} (no text)`);
       return;
     }
 
-    // Calls are reduced to just the contract address (first Solana base58 string,
-    // 32-44 chars); anything else, like pump updates, is copied as-is
-    const ca = text.match(/\b[1-9A-HJ-NP-Za-km-z]{32,44}\b/)?.[0];
+    // Calls are reduced to just the contract address (Solana base58 string,
+    // 32-44 chars), preferring one ending in "pump" and falling back to the
+    // first match; anything else, like pump updates, is sent as-is
+    const matches = text.match(/\b[1-9A-HJ-NP-Za-km-z]{32,44}\b/g) ?? [];
+    const ca = matches.find((m) => m.endsWith("pump")) ?? matches[0];
     const outgoing = ca
       ? { message: ca }
       : { message: text, formattingEntities: message.entities };
@@ -79,7 +82,7 @@ let queue = Promise.resolve();
       try {
         await client.sendMessage(TARGET, { ...outgoing, linkPreview: false });
         console.log(
-          ca ? `Copied CA ${ca} from message ${message.id}` : `Copied message ${message.id}`,
+          ca ? `Sent CA ${ca} from message ${message.id}` : `Sent message ${message.id}`,
         );
       } catch (err) {
         console.error("Copy failed:", err.message);
